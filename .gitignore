@@ -1,0 +1,24 @@
+# Node.js
+node_modules/
+dist/
+.vite/
+.env
+npm-debug.log*
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars.json
+
+# Logs
+logs/
+*.log
+
+# macOS / Windows / Linux
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
