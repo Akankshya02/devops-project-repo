@@ -22,3 +22,6 @@ Thumbs.db
 # Editor folders
 .vscode/
 .idea/
+
+*.tfvars
+*.env
