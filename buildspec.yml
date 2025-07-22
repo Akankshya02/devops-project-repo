@@ -2,27 +2,40 @@ version: 0.2
 
 phases:
   install:
-    runtime-versions:
-      nodejs: 18
+    working-directory:
+      devops-vite-project
     commands:
+      - echo "Installing Node.js 20.19.0 via NVM..."
+      - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      - export NVM_DIR="$HOME/.nvm"
+      - "[ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"
+      - nvm install 20.19.0
+      - nvm use 20.19.0
+      - node -v
+      - npm -v
+
       - echo "Installing Node.js dependencies..."
-      - npm ci
+      - npm install
 
       - echo "Installing Trivy..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
       - sudo mv trivy /usr/local/bin/trivy
 
-      - echo "Installing Docker (if not present)..."
+      - echo "Starting Docker daemon..."
       - nohup /usr/local/bin/dockerd > /dev/null 2>&1 &
       - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
 
   pre_build:
+    working-directory:
+      devops-vite-project
     commands:
       - echo "Docker version:"
       - docker --version
       - echo "Authenticating Docker (if required)..."
 
   build:
+    working-directory:
+      devops-vite-project
     commands:
       - echo "Building Vite app..."
       - npm run build
@@ -31,6 +44,8 @@ phases:
       - docker build -t vite-app-image ./devops-vite-project
 
   post_build:
+    working-directory:
+      devops-vite-project
     commands:
       - echo "Scanning Docker image with Trivy..."
       - trivy image vite-app-image --exit-code 1 --severity CRITICAL,HIGH

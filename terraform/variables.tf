@@ -82,6 +82,10 @@ variable "github_token" {
   type        = string
   sensitive   = true
 }
+variable "codestar_connection_arn" {
+  description = "CodeStar connection ARN for GitHub v2 integration"
+  type        = string
+}
 
 
 
