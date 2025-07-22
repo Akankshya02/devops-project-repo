@@ -57,7 +57,7 @@ variable "ec2_ami_id" {
 variable "ec2_instance_type" {
   description = "Type of EC2 instance to create"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.medium"
 }
 
 variable "key_pair_name" {
