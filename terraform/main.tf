@@ -250,3 +250,48 @@ resource "aws_iam_role_policy_attachment" "codebuild_logs_policy" {
   role       = aws_iam_role.codebuild_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
+resource "aws_iam_role_policy" "codepipeline_codebuild_start" {
+  name = "AllowCodeBuildStart"
+  role = aws_iam_role.codepipeline_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuilds"
+        ],
+        Resource = [
+          "arn:aws:codebuild:ap-south-1:717408097068:project/devops-codebuild-project"
+        ]
+      }
+    ]
+  })
+}
+resource "aws_iam_role_policy" "codebuild_s3_access" {
+  name = "CodeBuildS3Access"
+  role = aws_iam_role.codebuild_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketLocation",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "arn:aws:s3:::devops-project-artifacts-akankshya",
+          "arn:aws:s3:::devops-project-artifacts-akankshya/*"
+        ]
+      }
+    ]
+  })
+}
+
