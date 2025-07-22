@@ -17,12 +17,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_github_token: ${{ secrets.TERRAFORM_CODEPIPELINE_ACCESS_TOKEN }}
-      BUCKET_NAME: ${{ secrets.TF_BUCKET_NAME }}
-      GITHUB_OWNER: ${{ secrets.ACCOUNT_GITHUB_OWNER }}
-      GITHUB_REPO: ${{ secrets.ACCOUNT_GITHUB_REPO }}
-      EC2_AMI_ID: ${{ secrets.EC2_AMI_ID }}
-      KEY_PAIR_NAME: ${{ secrets.KEY_PAIR_NAME }}
-      CODESTAR_CONNECTION_ARN: ${{ secrets.CODESTAR_CONNECTION_ARN }}
 
     steps:
       - name: Checkout Code
@@ -40,7 +34,14 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan 
+        run: terraform plan -out=tfplan
+        env:
+          BUCKET_NAME: ${{ secrets.TF_BUCKET_NAME }}
+          GITHUB_OWNER: ${{ secrets.ACCOUNT_GITHUB_OWNER }}
+          GITHUB_REPO: ${{ secrets.ACCOUNT_GITHUB_REPO }}
+          EC2_AMI_ID: ${{ secrets.EC2_AMI_ID }}
+          KEY_PAIR_NAME: ${{ secrets.KEY_PAIR_NAME }}
+          CODESTAR_CONNECTION_ARN: ${{ secrets.CODESTAR_CONNECTION_ARN }}
 
       - name: Terraform Apply (Auto-approved)
         run: terraform apply -auto-approve tfplan
