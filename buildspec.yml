@@ -13,7 +13,7 @@ phases:
       - node -v
       - npm -v
 
-      - echo "Installing Node.js dependencies..."
+       - echo "Installing Node.js dependencies..."
       - npm install
 
       - echo "Installing Trivy..."
