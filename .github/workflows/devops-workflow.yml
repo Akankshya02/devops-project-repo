@@ -36,12 +36,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
         env:
-          BUCKET_NAME: ${{ secrets.TF_BUCKET_NAME }}
-          GITHUB_OWNER: ${{ secrets.ACCOUNT_GITHUB_OWNER }}
-          GITHUB_REPO: ${{ secrets.ACCOUNT_GITHUB_REPO }}
-          EC2_AMI_ID: ${{ secrets.EC2_AMI_ID }}
-          KEY_PAIR_NAME: ${{ secrets.KEY_PAIR_NAME }}
-          CODESTAR_CONNECTION_ARN: ${{ secrets.CODESTAR_CONNECTION_ARN }}
+          TF_VAR_BUCKET_NAME: ${{ secrets.TF_BUCKET_NAME }}
+          TF_VAR_GITHUB_OWNER: ${{ secrets.ACCOUNT_GITHUB_OWNER }}
+          TF_VAR_GITHUB_REPO: ${{ secrets.ACCOUNT_GITHUB_REPO }}
+          TF_VAR_EC2_AMI_ID: ${{ secrets.EC2_AMI_ID }}
+          TF_VAR_KEY_PAIR_NAME: ${{ secrets.KEY_PAIR_NAME }}
+          TF_VAR_CODESTAR_CONNECTION_ARN: ${{ secrets.CODESTAR_CONNECTION_ARN }}
 
       - name: Terraform Apply (Auto-approved)
         run: terraform apply -auto-approve tfplan
