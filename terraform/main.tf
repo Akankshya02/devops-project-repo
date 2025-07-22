@@ -48,7 +48,7 @@ resource "aws_iam_role" "codebuild_role" {
 # Attach AWS managed policies
 resource "aws_iam_role_policy_attachment" "codepipeline_policy" {
   role       = aws_iam_role.codepipeline_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodePipelineFullAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_policy" {
@@ -153,6 +153,7 @@ resource "aws_codepipeline" "vite_pipeline" {
         Owner      = var.github_owner
         Repo       = var.github_repo
         Branch     = var.github_branch
+        OAuthToken = var.github_token
       }
     }
   }
