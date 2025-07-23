@@ -146,6 +146,17 @@ resource "aws_instance" "vite_ec2" {
   tags = {
     Name = "vite-ec2-instance"
   }
+
+   user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y ruby wget
+              cd /home/ec2-user
+              wget https://aws-codedeploy-ap-south-1.s3.amazonaws.com/latest/install
+              chmod +x ./install
+              ./install auto
+              systemctl start codedeploy-agent
+              EOF
 }
 
 # ------------------------------
@@ -228,7 +239,25 @@ resource "aws_codepipeline" "vite_pipeline" {
       }
     }
   }
+
+  stage {
+    name = "Deploy"
+    action {
+      name              = "CodeDeploy"
+      category          = "Deploy"
+      owner             = "AWS"
+      provider          = "CodeDeploy"
+      input_artifacts   = ["build_output"]
+      version           = "1"
+      configuration = {
+        ApplicationName     = aws_codedeploy_app.vite_app.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.vite_group.deployment_group_name
+      }
+    }
+  }
 }
+
+  
 resource "aws_iam_role_policy" "codestar_access" {
   name = "codepipeline-codestar-access"
   role = aws_iam_role.codepipeline_role.name
@@ -293,5 +322,57 @@ resource "aws_iam_role_policy" "codebuild_s3_access" {
       }
     ]
   })
+}
+
+resource "aws_codedeploy_app" "vite_app" {
+  name = "vite-codedeploy-app"
+  compute_platform = "Server"
+}
+
+resource "aws_codedeploy_deployment_group" "vite_group" {
+  app_name              = aws_codedeploy_app.vite_app.name
+  deployment_group_name = "vite-deployment-group"
+  service_role_arn      = aws_iam_role.codedeploy_role.arn
+
+  deployment_style {
+    deployment_type = "IN_PLACE"
+    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
+  }
+
+  ec2_tag_set {
+    ec2_tag_filter {
+      key = "Name"
+      type = "KEY_AND_VALUE"
+      value = "vite-ec2-instance"
+    }
+  }
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+}
+resource "aws_iam_role" "codedeploy_role" {
+  name = "codedeploy-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "codedeploy.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy_attach" {
+  role       = aws_iam_role.codedeploy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_codedeploy_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2RoleforAWSCodeDeploy"
 }
 
