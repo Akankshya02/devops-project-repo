@@ -464,8 +464,10 @@ resource "aws_iam_role_policy" "codepipeline_codedeploy_policy" {
           "codedeploy:CreateDeployment",
           "codedeploy:GetApplication",
           "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig",
           "codedeploy:GetDeploymentGroup",
-          "codedeploy:RegisterApplicationRevision"
+          "codedeploy:RegisterApplicationRevision",
+          "codedeploy:BatchGetApplicationRevisions",
         ],
         Resource = [
           "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:application/${var.codedeploy_app_name}",
