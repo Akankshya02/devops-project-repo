@@ -86,6 +86,16 @@ variable "codestar_connection_arn" {
   description = "CodeStar connection ARN for GitHub v2 integration"
   type        = string
 }
+data "aws_caller_identity" "current" {}
+variable "codedeploy_app_name" {
+  description = "Name of the CodeDeploy Application"
+  type        = string
+}
+
+variable "codedeploy_deployment_group" {
+  description = "Name of the CodeDeploy Deployment Group"
+  type        = string
+}
 
 
 
