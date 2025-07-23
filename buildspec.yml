@@ -22,17 +22,11 @@ phases:
 
   pre_build:
     commands:
-      - echo "Switching to project directory..."
-      - cd devops-vite-project
-
       - echo "Docker version:"
       - docker --version
 
   build:
     commands:
-      - echo "Switching to project directory..."
-      - cd devops-vite-project
-
       - echo "Building Vite app..."
       - npm run build
 
@@ -41,9 +35,6 @@ phases:
 
   post_build:
     commands:
-      - echo "Switching to project directory..."
-      - cd devops-vite-project
-
       - echo "Scanning Docker image with Trivy..."
       - trivy image vite-app-image --exit-code 1 --severity CRITICAL,HIGH
 
