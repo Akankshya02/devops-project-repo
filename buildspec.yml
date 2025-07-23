@@ -13,7 +13,8 @@ phases:
 
       - echo "Installing Trivy..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-      - sudo mv trivy /usr/local/bin/trivy
+      - sudo mv ./bin/trivy /usr/local/bin/trivy
+
 
       - echo "Starting Docker daemon..."
       - nohup /usr/local/bin/dockerd > /dev/null 2>&1 &
