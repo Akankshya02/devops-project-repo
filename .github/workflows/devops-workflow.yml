@@ -33,9 +33,14 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Run tfsec (Terraform Security Scanner)
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          tfsec . --no-color
+
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
-      
+
       - name: Terraform Apply (Auto-approved)
         run: terraform apply -auto-approve tfplan
         env:
