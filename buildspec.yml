@@ -47,6 +47,11 @@ phases:
         else
           echo "Skipping Trivy scan as image build failed."
         fi
+      - echo "Tagging Docker image..."
+      - docker tag vite-app-image $DOCKER_USERNAME/vite-app-image:latest
+      - echo "Pushing image to Docker Hub..."
+      - docker push $DOCKER_USERNAME/vite-app-image:latest
+  
 
 artifacts:
   files:

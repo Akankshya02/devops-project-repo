@@ -187,6 +187,26 @@ resource "aws_iam_role_policy_attachment" "codebuild_logs_policy" {
   role       = aws_iam_role.codebuild_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
+resource "aws_iam_policy" "codebuild_dockerhub_secret" {
+  name = "AllowSecretsManagerDockerHub"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = "arn:aws:secretsmanager:ap-south-1:717408097068:secret:dockerhub/credentials-*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_dockerhub_secret" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_dockerhub_secret.arn
+}
 
 # ------------------------------
 # Security Group for EC2
@@ -349,36 +369,20 @@ resource "aws_codepipeline" "devops_pipeline" {
     }
   }
 }
+# -------------------
+# CodeDeploy Application
+# -------------------
 resource "aws_codedeploy_app" "devops_app" {
-  name = "devops-codedeploy-app"
-  compute_platform = "Server"
+  name              = "devops-codedeploy-app"
+  compute_platform  = "Server"
 }
 
-resource "aws_codedeploy_deployment_group" "devops_group" {
-  app_name              = aws_codedeploy_app.devops_app.name
-  deployment_group_name = "devops-deployment-group"
-  service_role_arn      = aws_iam_role.codedeploy_role.arn
-
-  deployment_style {
-    deployment_type = "IN_PLACE"
-    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
-  }
-
-  ec2_tag_set {
-    ec2_tag_filter {
-      key = "Name"
-      type = "KEY_AND_VALUE"
-      value = "devops-ec2-instance"
-    }
-  }
-
-  auto_rollback_configuration {
-    enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
-  }
-}
+# -------------------
+# IAM Role for CodeDeploy
+# -------------------
 resource "aws_iam_role" "codedeploy_role" {
   name = "codedeploy-role"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -390,10 +394,71 @@ resource "aws_iam_role" "codedeploy_role" {
     }]
   })
 }
+
+# Attach AWS Managed Role for CodeDeploy EC2 Deployments
 resource "aws_iam_role_policy_attachment" "codedeploy_attach" {
   role       = aws_iam_role.codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
 }
+
+# Optional: Extra Permissions (CloudWatch Logs, S3, Describe EC2, etc.)
+resource "aws_iam_policy" "codedeploy_extra" {
+  name = "CodeDeployExtraPolicy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:Describe*",
+          "tag:GetTags",
+          "cloudwatch:PutMetricData",
+          "logs:*",
+          "s3:Get*",
+          "s3:List*"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy_extra_attach" {
+  role       = aws_iam_role.codedeploy_role.name
+  policy_arn = aws_iam_policy.codedeploy_extra.arn
+}
+
+# -------------------
+# Deployment Group
+# -------------------
+resource "aws_codedeploy_deployment_group" "devops_group" {
+  app_name              = aws_codedeploy_app.devops_app.name
+  deployment_group_name = "devops-deployment-group"
+  service_role_arn      = aws_iam_role.codedeploy_role.arn
+
+  deployment_style {
+    deployment_type   = "IN_PLACE"
+    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
+  }
+
+  # Use EC2 tag filters to select instances
+  ec2_tag_set {
+    ec2_tag_filter {
+      key   = "Name"
+      value = "devops-ec2-instance"
+      type  = "KEY_AND_VALUE"
+    }
+  }
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  deployment_config_name = "CodeDeployDefault.OneAtATime"
+}
+
 
 resource "aws_iam_role" "ec2_codedeploy_role" {
   name = "ec2-codedeploy-role"
@@ -421,13 +486,6 @@ resource "aws_iam_role_policy_attachment" "s3_full_access" {
   role       = aws_iam_role.ec2_codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
-
-# resource "aws_iam_role_policy_attachment" "ec2_codedeploy_full_access" {
-#   role       = aws_iam_role.ec2_codedeploy_role.name
-#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
-# }
-
-# Attach AmazonEC2FullAccess to ec2-codedeploy-role
 resource "aws_iam_role_policy_attachment" "ec2_full_access" {
   role       = aws_iam_role.ec2_codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
@@ -445,26 +503,13 @@ resource "aws_iam_instance_profile" "ec2_codedeploy_instance_profile" {
   role = aws_iam_role.ec2_codedeploy_role.name
 }
 
-resource "aws_iam_policy" "codebuild_dockerhub_secret" {
-  name = "AllowSecretsManagerDockerHub"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ],
-        Resource = "arn:aws:secretsmanager:ap-south-1:717408097068:secret:dockerhub/credentials-*"
-      }
-    ]
-  })
+resource "aws_iam_role_policy_attachment" "ec2_codedeploy_policy_attachment" {
+  role       = aws_iam_role.ec2_codedeploy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2RoleforAWSCodeDeploy"
 }
 
-resource "aws_iam_role_policy_attachment" "attach_dockerhub_secret" {
-  role       = aws_iam_role.codebuild_role.name
-  policy_arn = aws_iam_policy.codebuild_dockerhub_secret.arn
-}
+
+
 
 
 
