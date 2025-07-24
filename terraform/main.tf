@@ -445,6 +445,28 @@ resource "aws_iam_instance_profile" "ec2_codedeploy_instance_profile" {
   role = aws_iam_role.ec2_codedeploy_role.name
 }
 
+resource "aws_iam_policy" "codebuild_dockerhub_secret" {
+  name = "AllowSecretsManagerDockerHub"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = "arn:aws:secretsmanager:ap-south-1:717408097068:secret:dockerhub/credentials-*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_dockerhub_secret" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_dockerhub_secret.arn
+}
+
+
 
 
 

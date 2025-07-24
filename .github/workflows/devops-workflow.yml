@@ -55,9 +55,7 @@ jobs:
     defaults:
       run:
         working-directory: ./devops-vite-project
-    env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
