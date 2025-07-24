@@ -21,7 +21,8 @@ phases:
       - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
 
       - echo "Installing dependencies..."
-      - apk update && apk add jq
+      - echo "Installing jq..."
+      - yum install -y jq
       - echo "Dependencies installed."
 
   pre_build:
