@@ -22,6 +22,7 @@ phases:
       - echo "Starting Docker daemon..."
       - nohup /usr/local/bin/dockerd > /dev/null 2>&1 &
       - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+      - chmod +x scripts/*.sh
 
   pre_build:
     commands:
@@ -55,5 +56,7 @@ phases:
 
 artifacts:
   files:
-    - '**/*'
-  base-directory: devops-vite-project/dist
+    - appspec.yml
+    - scripts/**
+    - dist/** 
+  base-directory: devops-vite-project
