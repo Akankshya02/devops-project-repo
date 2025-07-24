@@ -1,25 +1,25 @@
 # Output the EC2 instance name
 output "vite_ec2_name" {
   description = "The name of the Vite EC2 instance"
-  value       = aws_instance.vite_ec2.tags["Name"]
+  value       = aws_instance.devops_ec2.tags["Name"]
 }
 
 # Output the public IP of the EC2 instance
 output "ec2_public_ip" {
   description = "The public IP address of the EC2 instance"
-  value       = aws_instance.vite_ec2.public_ip
+  value       = aws_instance.devops_ec2.public_ip
 }
 
 # Output CodePipeline project name
 output "codepipeline_name" {
   description = "The name of the AWS CodePipeline"
-  value       = aws_codepipeline.vite_pipeline.name
+  value       = aws_codepipeline.devops_pipeline.name
 }
 
 # Output CodeBuild project name
 output "codebuild_project_name" {
   description = "The name of the CodeBuild project"
-  value       = aws_codebuild_project.vite_codebuild.name
+  value       = aws_codebuild_project.devops_codebuild.name
 }
 
 # Output the CodeBuild IAM role ARN

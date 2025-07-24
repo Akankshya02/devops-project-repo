@@ -22,6 +22,8 @@ phases:
 
   pre_build:
     commands:
+      - echo Logging in to DockerHub...
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       - echo "Docker version:"
       - docker --version
 
@@ -35,10 +37,13 @@ phases:
 
   post_build:
     commands:
-      - echo "Scanning Docker image with Trivy..."
-      - trivy image vite-app-image --exit-code 1 --severity CRITICAL,HIGH
-
-      - echo "Build and security scan completed at $(date)"
+      - |
+        if docker images | grep -q vite-app-image; then
+          echo "Scanning Docker image with Trivy..."
+          trivy image vite-app-image --exit-code 1 --severity CRITICAL,HIGH
+        else
+          echo "Skipping Trivy scan as image build failed."
+        fi
 
 artifacts:
   files:

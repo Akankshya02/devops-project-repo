@@ -192,7 +192,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_logs_policy" {
 # Security Group for EC2
 # ------------------------------
 resource "aws_security_group" "ec2_sg" {
-  name        = "vite-ec2-sg"
+  name        = "devops-ec2-sg"
   description = "Allow SSH and HTTP access"
   vpc_id      = data.aws_vpc.default.id
 
@@ -220,14 +220,14 @@ resource "aws_security_group" "ec2_sg" {
   }
 
   tags = {
-    Name = "vite-ec2-sg"
+    Name = "devops-ec2-sg"
   }
 }
 
 # ------------------------------
 # EC2 Instance for Vite App
 # ------------------------------
-resource "aws_instance" "vite_ec2" {
+resource "aws_instance" "devops_ec2" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   key_name               = var.key_pair_name
@@ -236,7 +236,7 @@ resource "aws_instance" "vite_ec2" {
 
 
   tags = {
-    Name = "vite-ec2-instance"
+    Name = "devops-ec2-instance"
   }
 
    user_data = <<-EOF
@@ -255,7 +255,7 @@ resource "aws_instance" "vite_ec2" {
 # ------------------------------
 # CodeBuild Project
 # ------------------------------
-resource "aws_codebuild_project" "vite_codebuild" {
+resource "aws_codebuild_project" "devops_codebuild" {
   name          = var.codebuild_project_name
   description   = "CodeBuild project for Vite app"
   service_role  = aws_iam_role.codebuild_role.arn
@@ -289,7 +289,7 @@ resource "aws_codebuild_project" "vite_codebuild" {
 # ------------------------------
 # CodePipeline with GitHub v2 via CodeStar Connection
 # ------------------------------
-resource "aws_codepipeline" "vite_pipeline" {
+resource "aws_codepipeline" "devops_pipeline" {
   name     = var.codepipeline_name
   role_arn = aws_iam_role.codepipeline_role.arn
 
@@ -328,7 +328,7 @@ resource "aws_codepipeline" "vite_pipeline" {
       output_artifacts = ["build_output"]
       version          = "1"
       configuration = {
-        ProjectName = aws_codebuild_project.vite_codebuild.name
+        ProjectName = aws_codebuild_project.devops_codebuild.name
       }
     }
   }
@@ -343,20 +343,20 @@ resource "aws_codepipeline" "vite_pipeline" {
       input_artifacts   = ["build_output"]
       version           = "1"
       configuration = {
-        ApplicationName     = aws_codedeploy_app.vite_app.name
-        DeploymentGroupName = aws_codedeploy_deployment_group.vite_group.deployment_group_name
+        ApplicationName     = aws_codedeploy_app.devops_app.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.devops_group.deployment_group_name
       }
     }
   }
 }
-resource "aws_codedeploy_app" "vite_app" {
-  name = "vite-codedeploy-app"
+resource "aws_codedeploy_app" "devops_app" {
+  name = "devops-codedeploy-app"
   compute_platform = "Server"
 }
 
-resource "aws_codedeploy_deployment_group" "vite_group" {
-  app_name              = aws_codedeploy_app.vite_app.name
-  deployment_group_name = "vite-deployment-group"
+resource "aws_codedeploy_deployment_group" "devops_group" {
+  app_name              = aws_codedeploy_app.devops_app.name
+  deployment_group_name = "devops-deployment-group"
   service_role_arn      = aws_iam_role.codedeploy_role.arn
 
   deployment_style {
@@ -368,7 +368,7 @@ resource "aws_codedeploy_deployment_group" "vite_group" {
     ec2_tag_filter {
       key = "Name"
       type = "KEY_AND_VALUE"
-      value = "vite-ec2-instance"
+      value = "devops-ec2-instance"
     }
   }
 
