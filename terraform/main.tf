@@ -40,6 +40,27 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
 }
 
+resource "aws_iam_role_policy" "codepipeline_codebuild_start" {
+  name = "AllowCodeBuildStart"
+  role = aws_iam_role.codepipeline_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuilds"
+        ],
+        Resource = [
+          "arn:aws:codebuild:ap-south-1:717408097068:project/devops-codebuild-project"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "codepipeline_s3_policy" {
   name = "codepipeline-s3-access"
   role = aws_iam_role.codepipeline_role.id
@@ -72,6 +93,46 @@ resource "aws_iam_role_policy" "codepipeline_s3_policy" {
     ]
   })
 }
+resource "aws_iam_role_policy_attachment" "codepipeline_codedeploy_access" {
+  role       = aws_iam_role.codepipeline_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
+}
+resource "aws_iam_role_policy" "codestar_access" {
+  name = "codepipeline-codestar-access"
+  role = aws_iam_role.codepipeline_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codestar-connections:UseConnection"
+        ],
+        Resource = var.codestar_connection_arn
+      }
+    ]
+  })
+}
+resource "aws_iam_role_policy" "codedeploy_trigger_policy" {
+  name = "codedeploy-trigger"
+  role = aws_iam_role.codepipeline_role.name  # or any appropriate role
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codedeploy:CreateDeployment"
+        ],
+        Resource = [
+          "arn:aws:codedeploy:ap-south-1:717408097068:deploymentgroup:vite-codedeploy-app/vite-deployment-group"
+        ]
+      }
+    ]
+  })
+}
 
 # ------------------------------
 # CodeBuild IAM Role & Policy
@@ -93,9 +154,38 @@ resource "aws_iam_role" "codebuild_role" {
   })
 }
 
+resource "aws_iam_role_policy" "codebuild_s3_access" {
+  name = "CodeBuildS3Access"
+  role = aws_iam_role.codebuild_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketLocation",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "arn:aws:s3:::devops-project-artifacts-akankshya",
+          "arn:aws:s3:::devops-project-artifacts-akankshya/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "codebuild_policy" {
   role       = aws_iam_role.codebuild_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
+}
+resource "aws_iam_role_policy_attachment" "codebuild_logs_policy" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
 
 # ------------------------------
@@ -142,7 +232,7 @@ resource "aws_instance" "vite_ec2" {
   instance_type          = var.ec2_instance_type
   key_name               = var.key_pair_name
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  iam_instance_profile = aws_iam_instance_profile.ec2_codedeploy_instance_profile.name
 
 
   tags = {
@@ -259,74 +349,6 @@ resource "aws_codepipeline" "vite_pipeline" {
     }
   }
 }
-
-  
-resource "aws_iam_role_policy" "codestar_access" {
-  name = "codepipeline-codestar-access"
-  role = aws_iam_role.codepipeline_role.name
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "codestar-connections:UseConnection"
-        ],
-        Resource = var.codestar_connection_arn
-      }
-    ]
-  })
-}
-resource "aws_iam_role_policy_attachment" "codebuild_logs_policy" {
-  role       = aws_iam_role.codebuild_role.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-}
-resource "aws_iam_role_policy" "codepipeline_codebuild_start" {
-  name = "AllowCodeBuildStart"
-  role = aws_iam_role.codepipeline_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "codebuild:StartBuild",
-          "codebuild:BatchGetBuilds"
-        ],
-        Resource = [
-          "arn:aws:codebuild:ap-south-1:717408097068:project/devops-codebuild-project"
-        ]
-      }
-    ]
-  })
-}
-resource "aws_iam_role_policy" "codebuild_s3_access" {
-  name = "CodeBuildS3Access"
-  role = aws_iam_role.codebuild_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:GetObjectVersion",
-          "s3:GetBucketLocation",
-          "s3:ListBucket"
-        ],
-        Resource = [
-          "arn:aws:s3:::devops-project-artifacts-akankshya",
-          "arn:aws:s3:::devops-project-artifacts-akankshya/*"
-        ]
-      }
-    ]
-  })
-}
-
 resource "aws_codedeploy_app" "vite_app" {
   name = "vite-codedeploy-app"
   compute_platform = "Server"
@@ -368,23 +390,12 @@ resource "aws_iam_role" "codedeploy_role" {
     }]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "codedeploy_attach" {
   role       = aws_iam_role.codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_codedeploy_access" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-}
-# And optionally:
-resource "aws_iam_role_policy_attachment" "ec2-codedeploy_service_role"{
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-}
-
-resource "aws_iam_role" "ec2_role" {
+resource "aws_iam_role" "ec2_codedeploy_role" {
   name = "ec2-codedeploy-role"
 
   assume_role_policy = jsonencode({
@@ -399,84 +410,49 @@ resource "aws_iam_role" "ec2_role" {
       }
     ]
   })
-
-  tags = {
-    Name = "EC2 CodeDeploy Role"
-  }
 }
 
-# Instance profile to attach role to EC2
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "ec2-cicd-profile"
-  role = aws_iam_role.ec2_role.name
-  # iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-
+resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
+  role       = aws_iam_role.ec2_codedeploy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# Attach AmazonS3FullAccess
-resource "aws_iam_role_policy_attachment" "ec2_s3_full_access" {
-  role       = aws_iam_role.ec2_role.name
+resource "aws_iam_role_policy_attachment" "s3_full_access" {
+  role       = aws_iam_role.ec2_codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
-# Attach AWSCodeDeployFullAccess
-resource "aws_iam_role_policy_attachment" "ec2_codedeploy_full_access" {
-  role       = aws_iam_role.ec2_role.name
+# resource "aws_iam_role_policy_attachment" "ec2_codedeploy_full_access" {
+#   role       = aws_iam_role.ec2_codedeploy_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+# }
+
+# Attach AmazonEC2FullAccess to ec2-codedeploy-role
+resource "aws_iam_role_policy_attachment" "ec2_full_access" {
+  role       = aws_iam_role.ec2_codedeploy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+}
+
+# Attach AWSCodeDeployFullAccess to ec2-codedeploy-role
+resource "aws_iam_role_policy_attachment" "codedeploy_full_access" {
+  role       = aws_iam_role.ec2_codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
 }
 
-# Attach AWSCodePipelineFullAccess
-resource "aws_iam_role_policy_attachment" "ec2_codepipeline_full_access" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
+
+resource "aws_iam_instance_profile" "ec2_codedeploy_instance_profile" {
+  name = "ec2-codedeploy-instance-profile"
+  role = aws_iam_role.ec2_codedeploy_role.name
 }
 
-resource "aws_iam_role_policy" "codedeploy_trigger_policy" {
-  name = "codedeploy-trigger"
-  role = aws_iam_role.codepipeline_role.name  # or any appropriate role
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "codedeploy:CreateDeployment"
-        ],
-        Resource = [
-          "arn:aws:codedeploy:ap-south-1:717408097068:deploymentgroup:vite-codedeploy-app/vite-deployment-group"
-        ]
-      }
-    ]
-  })
-}
-resource "aws_iam_role_policy" "codepipeline_codedeploy_policy" {
-  name = "codepipeline-codedeploy-policy"
-  role = aws_iam_role.codepipeline_role.name
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid: "CodeDeployPermissions",
-        Effect = "Allow",
-        Action = [
-          "codedeploy:CreateDeployment",
-          "codedeploy:GetApplication",
-          "codedeploy:GetDeployment",
-          "codedeploy:GetDeploymentConfig",
-          "codedeploy:GetDeploymentGroup",
-          "codedeploy:RegisterApplicationRevision",
-          "codedeploy:BatchGetApplicationRevisions",
-        ],
-        Resource = [
-          "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:application/${var.codedeploy_app_name}",
-          "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentgroup/${var.codedeploy_app_name}/${var.codedeploy_deployment_group}"
-        ]
-      }
-    ]
-  })
-}
+
+
+
+
+    
+
 
 
 

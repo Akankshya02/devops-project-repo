@@ -1,11 +1,13 @@
 version: 0.0
 os: linux
+
 files:
   - source: /
-    destination: /var/www/html
+    destination: /home/ec2-user/devops-vite-project
 
 hooks:
   AfterInstall:
     - location: scripts/deploy.sh
       timeout: 300
       runas: ec2-user
+
