@@ -503,11 +503,6 @@ resource "aws_iam_instance_profile" "ec2_codedeploy_instance_profile" {
   role = aws_iam_role.ec2_codedeploy_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_codedeploy_policy_attachment" {
-  role       = aws_iam_role.ec2_codedeploy_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2RoleforAWSCodeDeploy"
-}
-
 
 
 
