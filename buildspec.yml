@@ -13,17 +13,14 @@ phases:
 
       - echo "Installing Trivy..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-      - sudo mv ./bin/trivy /usr/local/bin/trivy
+      - sudo mv ./trivy /usr/local/bin/trivy
 
+      - echo "Installing jq..."
+      - sudo apt-get update && sudo apt-get install -y jq
 
       - echo "Starting Docker daemon..."
       - nohup /usr/local/bin/dockerd > /dev/null 2>&1 &
       - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
-
-      - echo "Installing dependencies..."
-      - echo "Installing jq..."
-      - yum install -y jq
-      - echo "Dependencies installed."
 
   pre_build:
     commands:
@@ -31,6 +28,7 @@ phases:
       - export DOCKER_USERNAME=$(aws secretsmanager get-secret-value --secret-id dockerhub/credentials --query 'SecretString' --output text | jq -r .DOCKER_USERNAME)
       - export DOCKER_PASSWORD=$(aws secretsmanager get-secret-value --secret-id dockerhub/credentials --query 'SecretString' --output text | jq -r .DOCKER_PASSWORD)
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
   build:
     commands:
       - echo "Building Vite app..."
