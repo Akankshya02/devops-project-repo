@@ -97,5 +97,12 @@ variable "codedeploy_deployment_group" {
   type        = string
 }
 
+# variable "access_policies" {
+#   type        = list(string)
+#   description = "List of EKS access policy ARNs"
+# }
+
+
+
 
 

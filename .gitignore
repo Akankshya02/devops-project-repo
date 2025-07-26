@@ -25,3 +25,11 @@ Thumbs.db
 
 
 *.env
+# Ignore Sealed Secrets CLI binaries
+kubeseal
+kubeseal-linux
+kubeseal.exe
+kubeseal-0.30.0-linux-amd64.tar.gz
+
+# Ignore Sealed Secrets public certificate if you don’t want to commit it
+pub-cert.pem

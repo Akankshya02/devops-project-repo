@@ -14,3 +14,9 @@ codestar_connection_arn = "arn:aws:codeconnections:ap-south-1:717408097068:conne
 
 codedeploy_app_name = "devops-codedeploy-app"
 codedeploy_deployment_group = "devops-deploymenmt-group"
+
+# access_policies = [
+#   "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+# ]
+
+

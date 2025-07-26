@@ -503,6 +503,119 @@ resource "aws_iam_instance_profile" "ec2_codedeploy_instance_profile" {
   role = aws_iam_role.ec2_codedeploy_role.name
 }
 
+# <---------------------------------------------------------------->
+# |              KUBERNETES PART BEGINS FROM HERE                  |
+# <---------------------------------------------------------------->
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# locals {
+#   access_policy_associations = [
+#     for policy_arn in var.access_policies : {
+#       association_policy_arn              = policy_arn
+#       association_access_scope_type       = "cluster"
+#       association_access_scope_namespaces = []
+#     }
+#   ]
+# }
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.8.4"
+
+  cluster_name    = "devops-cluster"
+  cluster_version = "1.29"
+
+  vpc_id     = data.aws_vpc.default.id
+  subnet_ids = data.aws_subnets.default.ids
+
+  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = true
+
+
+  access_entries = {
+  github_terraform_user = {
+    kubernetes_username = "github-terraform-user"
+    principal_arn       = "arn:aws:iam::717408097068:user/github-terraform-user"
+
+#     policy_associations = {
+#       system = [
+#         {
+#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+#           access_scope = {
+#             type       = "cluster"
+
+#           }
+#         }
+#       ]
+    }
+  }
+
+
+
+  eks_managed_node_groups = {
+    default = {
+      instance_types = ["t3.medium"]
+      desired_size   = 2
+      max_size       = 3
+      min_size       = 1
+    }
+  }
+
+  enable_irsa = true
+
+  tags = {
+    Environment = "dev"
+    Project     = "devops"
+  }
+}
+
+resource "helm_release" "sealed_secrets" {
+  name       = "sealed-secrets"
+  repository = "https://bitnami-labs.github.io/sealed-secrets"
+  chart      = "sealed-secrets"
+  namespace  = "kube-system"
+  version    = "2.13.0"
+  create_namespace = false
+
+  depends_on = [module.eks]
+}
+
+
+
+
+# resource "helm_repository" "bitnami" {
+#   name = "bitnami"
+#   url  = "https://charts.bitnami.com/bitnami"
+# }
+
+
+
+# resource "helm_repository" "sealed_secrets" {
+#   name = "sealed-secrets"
+#   url  = "https://bitnami-labs.github.io/sealed-secrets"
+# }
+# resource "helm_release" "sealed_secrets" {
+#   name       = "sealed-secrets"
+#   repository = helm_repository.sealed_secrets.url
+#   chart      = "sealed-secrets"
+#   namespace  = "kube-system"
+#   version    = "2.13.0"
+#   create_namespace = false
+
+#   depends_on = [
+#     module.eks,
+#     helm_repository.sealed_secrets
+#   ]
+# }
+
+
+
+
 
 
 
