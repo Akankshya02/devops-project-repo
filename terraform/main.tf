@@ -541,6 +541,7 @@ module "eks" {
   github_terraform_user = {
     kubernetes_username = "github-terraform-user"
     principal_arn       = "arn:aws:iam::717408097068:user/github-terraform-user"
+    kubernetes_groups = ["system:masters"]
 
 #     policy_associations = {
 #       system = [
